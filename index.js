@@ -4,14 +4,8 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Log incoming requests
 app.use((req, res, next) => {
   console.log(`🔍 Incoming request: ${req.method} ${req.url}`);
-  next();
-});
-
-// Add CORS and content-type headers
-app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'application/json');
   next();
@@ -19,8 +13,8 @@ app.use((req, res, next) => {
 
 app.get('/schwab', async (req, res) => {
   console.log('🟡 /schwab route triggered');
-
   let browser;
+
   try {
     browser = await puppeteer.launch({
       headless: 'new',
@@ -32,13 +26,9 @@ app.get('/schwab', async (req, res) => {
     });
 
     const page = await browser.newPage();
-
-    // Spoof browser fingerprint
     await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36');
     await page.setViewport({ width: 1280, height: 800 });
-    await page.setJavaScriptEnabled(true);
 
-    // Navigate to Schwab with extended timeout
     try {
       await page.goto('https://www.schwab.com/money-market-funds', {
         waitUntil: 'networkidle2',
@@ -65,7 +55,6 @@ app.get('/schwab', async (req, res) => {
     });
 
     console.log('📊 Extracted data:', data);
-
     await browser.close();
     res.status(200).json(data);
   } catch (error) {
