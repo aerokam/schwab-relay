@@ -11,6 +11,7 @@ app.get('/schwab', async (req, res) => {
   });
   const page = await browser.newPage();
   await page.goto('https://www.schwab.com/money-market-funds', { waitUntil: 'networkidle2' });
+  await page.waitForSelector('table tbody tr', { timeout: 10000 });
 
   const data = await page.evaluate(() => {
     const rows = Array.from(document.querySelectorAll('table tbody tr'));
@@ -23,7 +24,8 @@ app.get('/schwab', async (req, res) => {
       return { name, ticker, yield: yieldValue };
     });
   });
-
+  const html = await page.content();
+  console.log(html);
   await browser.close();
   res.json(data);
 });
