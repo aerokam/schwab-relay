@@ -3,7 +3,7 @@ services:
     name: schwab-relay
     env: node
     plan: starter
-    buildCommand: npm install
+    buildCommand: ./render-build.sh
     startCommand: npm start
     autoDeploy: true
     envVars:
