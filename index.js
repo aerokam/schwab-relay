@@ -11,6 +11,11 @@ app.use((req, res, next) => {
   next();
 });
 
+// simple health check
+app.get('/ping', (req, res) => {
+  res.json({ ok: true, time: new Date().toISOString() });
+});
+
 app.get('/schwab', async (req, res) => {
   console.log('🟡 /schwab route triggered');
   const start = Date.now();
@@ -27,39 +32,39 @@ app.get('/schwab', async (req, res) => {
     });
 
     const page = await browser.newPage();
-    await page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36');
+    await page.setUserAgent(
+      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/115.0.0.0 Safari/537.36'
+    );
     await page.setViewport({ width: 1280, height: 800 });
 
-    try {
-      await page.goto('https://www.schwab.com/money-market-funds', {
-        waitUntil: 'networkidle2',
-        timeout: 30000
-      });
-    } catch (navError) {
-      console.error('❌ Navigation failed:', navError);
-      await browser.close();
-      return res.status(500).json({ error: 'Navigation timeout', details: navError.message });
-    }
+    console.log('➡️ Navigating to Schwab...');
+    await page.goto('https://www.schwab.com/money-market-funds', {
+      waitUntil: 'load',
+      timeout: 60000
+    });
+    console.log('✅ Page loaded');
 
-    await new Promise(resolve => setTimeout(resolve, 2000));
+    // wait explicitly for the table to appear
+    await page.waitForSelector('table tbody tr', { timeout: 20000 });
+    console.log('✅ Table found');
 
     const data = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
       return rows.map(row => {
         const cells = row.querySelectorAll('td');
-        const name = cells[0]?.innerText.trim().replace(/\(.*$/, '').trim();
+        // strip ticker and footnotes
+        const rawName = cells[0]?.innerText.trim() || '';
+        const name = rawName.replace(/\(.*$/, '').replace(/[\*\d]+$/, '').trim();
         const yieldValue = cells[1]?.innerText.trim();
-        const tickerMatch = name.match(/\((\w{4,5})\)/);
-        const ticker = tickerMatch ? tickerMatch[1] : '';
-        return { name, ticker, yield: yieldValue };
+        return { name, yield: yieldValue };
       });
     });
 
     console.log('📊 Extracted data:', data);
     await browser.close();
+
     const durationMs = Date.now() - start;
-    const seconds = Math.floor(durationMs / 1000);
-    console.log(`⏱ Scrape duration: ${seconds}s`);
+    console.log(`⏱ Scrape duration: ${Math.floor(durationMs / 1000)}s`);
     res.status(200).json(data);
   } catch (error) {
     console.error('❌ Error during scraping:', error);
