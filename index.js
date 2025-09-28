@@ -4,7 +4,13 @@ const puppeteer = require('puppeteer');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+app.use((req, res, next) => {
+  console.log(`🔍 Incoming request: ${req.method} ${req.url}`);
+  next();
+});
+
 app.get('/schwab', async (req, res) => {
+  console.log('🟡 /schwab route triggered');
   const browser = await puppeteer.launch({
     headless: 'new',
     args: ['--no-sandbox', '--disable-setuid-sandbox']
