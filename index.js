@@ -13,6 +13,7 @@ app.use((req, res, next) => {
 
 app.get('/schwab', async (req, res) => {
   console.log('🟡 /schwab route triggered');
+  const start = Date.now();
   let browser;
 
   try {
@@ -32,7 +33,7 @@ app.get('/schwab', async (req, res) => {
     try {
       await page.goto('https://www.schwab.com/money-market-funds', {
         waitUntil: 'networkidle2',
-        timeout: 60000
+        timeout: 30000
       });
     } catch (navError) {
       console.error('❌ Navigation failed:', navError);
@@ -40,7 +41,7 @@ app.get('/schwab', async (req, res) => {
       return res.status(500).json({ error: 'Navigation timeout', details: navError.message });
     }
 
-    await new Promise(resolve => setTimeout(resolve, 5000));
+    await new Promise(resolve => setTimeout(resolve, 2000));
 
     const data = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
@@ -56,6 +57,9 @@ app.get('/schwab', async (req, res) => {
 
     console.log('📊 Extracted data:', data);
     await browser.close();
+    const durationMs = Date.now() - start;
+    const seconds = Math.floor(durationMs / 1000);
+    console.log(`⏱ Scrape duration: ${seconds}s`);
     res.status(200).json(data);
   } catch (error) {
     console.error('❌ Error during scraping:', error);
