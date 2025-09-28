@@ -20,8 +20,9 @@ app.use((req, res, next) => {
 app.get('/schwab', async (req, res) => {
   console.log('🟡 /schwab route triggered');
 
+  let browser;
   try {
-    const browser = await puppeteer.launch({
+    browser = await puppeteer.launch({
       headless: 'new',
       args: [
         '--no-sandbox',
@@ -37,8 +38,18 @@ app.get('/schwab', async (req, res) => {
     await page.setViewport({ width: 1280, height: 800 });
     await page.setJavaScriptEnabled(true);
 
-    // Navigate to Schwab
-    await page.goto('https://www.schwab.com/money-market-funds', { waitUntil: 'networkidle2' });
+    // Navigate to Schwab with extended timeout
+    try {
+      await page.goto('https://www.schwab.com/money-market-funds', {
+        waitUntil: 'networkidle2',
+        timeout: 60000
+      });
+    } catch (navError) {
+      console.error('❌ Navigation failed:', navError);
+      await browser.close();
+      return res.status(500).json({ error: 'Navigation timeout', details: navError.message });
+    }
+
     await new Promise(resolve => setTimeout(resolve, 5000));
 
     const data = await page.evaluate(() => {
@@ -59,6 +70,7 @@ app.get('/schwab', async (req, res) => {
     res.status(200).json(data);
   } catch (error) {
     console.error('❌ Error during scraping:', error);
+    if (browser) await browser.close();
     res.status(500).json({ error: 'Scraping failed', details: error.message });
   }
 });
