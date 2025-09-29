@@ -64,8 +64,10 @@ app.get('/schwab', async (req, res) => {
         if (ticker) {
           fullText = fullText.replace(`(${ticker})`, '');
         }
-        const name = fullText.replace(/\*+$/, '').trim();
-    
+        const name = fullText
+          .replace(/\*+$/, '')   // strip trailing asterisks
+          .replace(/\d+$/, '')   // strip trailing footnote digits
+          .trim();    
         const yieldValue = cells[1]?.innerText.trim();
         return { name, ticker, yield: yieldValue };
       });
