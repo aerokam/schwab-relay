@@ -39,7 +39,7 @@ app.get('/schwab', async (req, res) => {
 
     console.log('➡️ Navigating to Schwab...');
     await page.goto('https://www.schwab.com/money-market-funds', {
-      waitUntil: 'load',
+      waitUntil: 'domcontentloaded',
       timeout: 60000
     });
     console.log('✅ Page loaded');
