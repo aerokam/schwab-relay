@@ -50,7 +50,9 @@ app.get('/schwab', async (req, res) => {
     
     const { asOfDate, data } = await page.evaluate(() => {
       const headerText = document.querySelector('thead th span')?.innerText || '';
-      const asOfMatch = headerText.match(/as of (\d{2}\/\d{2}\/\d{4})/);
+      const asOfDate = headerText.includes('as of')
+        ? headerText.match(/as of (\d{2}\/\d{2}\/\d{4})/)?.[1] || ''
+        : '';
       const asOfDate = asOfMatch ? asOfMatch[1] : '';
     
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
