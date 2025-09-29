@@ -48,37 +48,40 @@ app.get('/schwab', async (req, res) => {
     await page.waitForSelector('table tbody tr', { timeout: 20000 });
     console.log('✅ Table found');
     
-    const data = await page.evaluate(() => {
+    const { asOfDate, data } = await page.evaluate(() => {
+      const headerText = document.querySelector('thead th span')?.innerText || '';
+      const asOfMatch = headerText.match(/as of (\d{2}\/\d{2}\/\d{4})/);
+      const asOfDate = asOfMatch ? asOfMatch[1] : '';
+    
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
-      return rows.map(row => {
+      const data = rows.map(row => {
         const cells = row.querySelectorAll('td');
     
-        // ticker is always inside the <a> element
         const link = cells[0]?.querySelector('a');
         const ticker = link ? link.innerText.trim() : '';
     
-        // full cell text (includes name + ticker + footnotes)
         let fullText = cells[0]?.innerText.trim() || '';
-    
-        // remove the ticker portion and any trailing symbols
         if (ticker) {
           fullText = fullText.replace(`(${ticker})`, '');
         }
         const name = fullText
-          .replace(/\*+$/, '')   // strip trailing asterisks
-          .replace(/\d+$/, '')   // strip trailing footnote digits
-          .trim();    
+          .replace(/\*+$/, '')
+          .replace(/\d+$/, '')
+          .trim();
+    
         const yieldValue = cells[1]?.innerText.trim();
         return { name, ticker, yield: yieldValue };
       });
-    });
+    
+      return { asOfDate, data };
+    });    
     
     console.log('📊 Extracted data:', data);
     await browser.close();
 
     const durationMs = Date.now() - start;
     console.log(`⏱ Scrape duration: ${Math.floor(durationMs / 1000)}s`);
-    res.status(200).json(data);
+    res.status(200).json({ asOfDate, data });
   } catch (error) {
     console.error('❌ Error during scraping:', error);
     if (browser) await browser.close();
