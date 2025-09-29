@@ -47,24 +47,30 @@ app.get('/schwab', async (req, res) => {
     // wait explicitly for the table to appear
     await page.waitForSelector('table tbody tr', { timeout: 20000 });
     console.log('✅ Table found');
+    
     const data = await page.evaluate(() => {
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
       return rows.map(row => {
         const cells = row.querySelectorAll('td');
     
-        // ticker is inside the <a> element in the first <td>
+        // ticker is always inside the <a> element
         const link = cells[0]?.querySelector('a');
         const ticker = link ? link.innerText.trim() : '';
     
-        // fund name is the text node before the link
-        const nameNode = cells[0]?.childNodes[0];
-        const name = nameNode ? nameNode.textContent.trim() : (cells[0]?.innerText || '').trim();
+        // full cell text (includes name + ticker + footnotes)
+        let fullText = cells[0]?.innerText.trim() || '';
+    
+        // remove the ticker portion and any trailing symbols
+        if (ticker) {
+          fullText = fullText.replace(`(${ticker})`, '');
+        }
+        const name = fullText.replace(/\*+$/, '').trim();
     
         const yieldValue = cells[1]?.innerText.trim();
         return { name, ticker, yield: yieldValue };
       });
     });
-
+    
     console.log('📊 Extracted data:', data);
     await browser.close();
 
