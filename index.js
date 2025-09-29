@@ -53,10 +53,9 @@ app.get('/schwab', async (req, res) => {
       const asOfDate = headerText.includes('as of')
         ? headerText.match(/as of (\d{2}\/\d{2}\/\d{4})/)?.[1] || ''
         : '';
-       const extractedDate = asOfMatch ? asOfMatch[1] : '';
     
-        const rows = Array.from(document.querySelectorAll('table tbody tr'));
-        const data = rows.map(row => {
+      const rows = Array.from(document.querySelectorAll('table tbody tr'));
+      const data = rows.map(row => {
         const cells = row.querySelectorAll('td');
     
         const link = cells[0]?.querySelector('a');
@@ -75,8 +74,8 @@ app.get('/schwab', async (req, res) => {
         return { name, ticker, yield: yieldValue };
       });
     
-       return { asOfDate: extractedDate, data };
-    });    
+      return { asOfDate, data };
+    });
     
     console.log('📊 Extracted data:', data);
     await browser.close();
