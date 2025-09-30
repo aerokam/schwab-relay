@@ -40,12 +40,12 @@ app.get('/schwab', async (req, res) => {
     console.log('➡️ Navigating to Schwab...');
     await page.goto('https://www.schwab.com/money-market-funds', {
       waitUntil: 'domcontentloaded',
-      timeout: 60000
+      timeout: 30000   // shorter timeout
     });
     console.log('✅ Page loaded');
 
     // wait explicitly for the table to appear
-    await page.waitForSelector('table tbody tr', { timeout: 20000 });
+    await page.waitForSelector('table tbody tr', { timeout: 10000 });
     console.log('✅ Table found');
     
     const { asOfDate, data } = await page.evaluate(() => {
@@ -53,14 +53,14 @@ app.get('/schwab', async (req, res) => {
       const asOfDate = headerText.includes('as of')
         ? headerText.match(/as of (\d{2}\/\d{2}\/\d{4})/)?.[1] || ''
         : '';
-    
+
       const rows = Array.from(document.querySelectorAll('table tbody tr'));
       const data = rows.map(row => {
         const cells = row.querySelectorAll('td');
-    
+
         const link = cells[0]?.querySelector('a');
         const ticker = link ? link.innerText.trim() : '';
-    
+
         let fullText = cells[0]?.innerText.trim() || '';
         if (ticker) {
           fullText = fullText.replace(`(${ticker})`, '');
@@ -69,20 +69,21 @@ app.get('/schwab', async (req, res) => {
           .replace(/\*+$/, '')
           .replace(/\d+$/, '')
           .trim();
-    
+
         const yieldValue = cells[1]?.innerText.trim();
         return { name, ticker, yield: yieldValue };
       });
-    
+
       return { asOfDate, data };
     });
     
     console.log(`📊 Funds extracted: ${data.length}`);
     console.log(`📅 As-of date: ${asOfDate}`);
-    await browser.close();
 
     const durationMs = Date.now() - start;
     console.log(`⏱ Scrape duration: ${Math.floor(durationMs / 1000)}s`);
+
+    await browser.close();
     res.status(200).json({ asOfDate, data });
   } catch (error) {
     console.error('❌ Error during scraping:', error);
