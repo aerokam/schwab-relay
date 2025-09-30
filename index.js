@@ -77,7 +77,12 @@ app.get('/schwab', async (req, res) => {
       return { asOfDate, data };
     });
     
+<<<<<<< HEAD
+    console.log(`📊 Funds extracted: ${data.length}`);
+    console.log(`📅 As-of date: ${asOfDate}`);
+=======
     console.log('📊 Extracted data:', data);
+>>>>>>> 7761401162e31b31b17006c6e54533d31bec9ab4
     await browser.close();
 
     const durationMs = Date.now() - start;
