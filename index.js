@@ -44,9 +44,21 @@ app.get('/schwab', async (req, res) => {
     });
     console.log('✅ Page loaded');
 
-    // wait explicitly for the table to appear
-    await page.waitForSelector('table tbody tr', { timeout: 10000 });
-    console.log('✅ Table found');
+    let tableFound = false;
+    const maxAttempts = 5;       // 5 × 5s = 25s total
+    for (let i = 0; i < maxAttempts; i++) {
+      try {
+        await page.waitForSelector('table tbody tr', { timeout: 5000 });
+        console.log('✅ Table found');
+        tableFound = true;
+        break;
+      } catch (err) {
+        console.log(`⏳ Table not found yet (attempt ${i + 1})`);
+      }
+    }
+    if (!tableFound) {
+      throw new Error('Table not found after retries');
+    }
     
     const { asOfDate, data } = await page.evaluate(() => {
       const headerText = document.querySelector('thead th span')?.innerText || '';
